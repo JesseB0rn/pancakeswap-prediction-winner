@@ -1,6 +1,6 @@
 import { BigNumber } from "@ethersproject/bignumber";
 import { hexlify } from "@ethersproject/bytes";
-import { JsonRpcProvider } from "@ethersproject/providers";
+import { WebSocketProvider } from "@ethersproject/providers";
 import { formatEther, parseEther } from "@ethersproject/units";
 import { Wallet } from "@ethersproject/wallet";
 import { blue, green, red, underline } from "chalk";
@@ -155,7 +155,8 @@ export const startPolling = async (
   const GLOBAL_CONFIG = {
     CONTRACT_ADDRESS: "0x18B2A687610328590Bc8F2e5fEdDe3b582A49cdA",
     AMOUNT_TO_BET: betAmount || "0.1", // in BNB,
-    BSC_RPC: "https://bsc-dataseed.binance.org/", // You can provide any custom RPC
+    BSC_RPC:
+      "wss://speedy-nodes-nyc.moralis.io/e4584f130b226b97f5b49b8c/bsc/mainnet/ws", // You can provide any custom RPC
     PRIVATE_KEY: privateKey,
     WAITING_TIME: 270000, // Waiting for 270sec = 4.5min
   };
@@ -193,7 +194,7 @@ export const startPolling = async (
 
   const signer = new Wallet(
     GLOBAL_CONFIG.PRIVATE_KEY as string,
-    new JsonRpcProvider(GLOBAL_CONFIG.BSC_RPC)
+    new WebSocketProvider(GLOBAL_CONFIG.BSC_RPC)
   );
 
   const predictionContract = (
