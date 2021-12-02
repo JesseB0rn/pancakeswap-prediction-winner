@@ -1,4 +1,5 @@
 import { Button } from "@chakra-ui/button";
+
 import { FormControl, FormLabel } from "@chakra-ui/form-control";
 import { useBoolean } from "@chakra-ui/hooks";
 import {
@@ -9,7 +10,7 @@ import {
   StarIcon,
 } from "@chakra-ui/icons";
 import { Input, InputGroup, InputLeftAddon } from "@chakra-ui/input";
-import { Box, Flex, HStack, Link, Text } from "@chakra-ui/layout";
+import { Box, Flex, HStack, Link, Text, Heading } from "@chakra-ui/layout";
 import { Switch } from "@chakra-ui/switch";
 import { Wallet } from "@ethersproject/wallet";
 import React, { useEffect, useState } from "react";
@@ -63,10 +64,13 @@ export default function Main() {
 
   return (
     <>
+      <Heading fontSize="">
+        PanWin
+      </Heading>
       <HStack justify="space-between" mb="4">
         <Button
           size="sm"
-          colorScheme="blue"
+          colorScheme="brand"
           variant={platforms[PLATFORMS.PancakeSwap] ? "solid" : "outline"}
           leftIcon={
             platforms[PLATFORMS.PancakeSwap] ? <CheckIcon /> : <CloseIcon />
@@ -82,7 +86,7 @@ export default function Main() {
         </Button>
         <Button
           size="sm"
-          colorScheme="blue"
+          colorScheme="brand"
           variant={platforms[PLATFORMS.CandleGenieBTC] ? "solid" : "outline"}
           leftIcon={
             platforms[PLATFORMS.CandleGenieBTC] ? <CheckIcon /> : <CloseIcon />
@@ -98,7 +102,7 @@ export default function Main() {
         </Button>
         <Button
           size="sm"
-          colorScheme="blue"
+          colorScheme="brand"
           variant={platforms[PLATFORMS.CandleGenieBNB] ? "solid" : "outline"}
           leftIcon={
             platforms[PLATFORMS.CandleGenieBNB] ? <CheckIcon /> : <CloseIcon />
@@ -114,7 +118,7 @@ export default function Main() {
         </Button>
         <Button
           size="sm"
-          colorScheme="blue"
+          colorScheme="brand"
           variant={platforms[PLATFORMS.CandleGenieETH] ? "solid" : "outline"}
           leftIcon={
             platforms[PLATFORMS.CandleGenieETH] ? <CheckIcon /> : <CloseIcon />
@@ -202,7 +206,7 @@ export default function Main() {
           }}
           w="full"
           size="lg"
-          colorScheme="blue"
+          colorScheme="brand"
           leftIcon={<StarIcon />}
         >
           Start The Bot

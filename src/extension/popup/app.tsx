@@ -5,16 +5,11 @@ import React from "react";
 import ReactDOM from "react-dom";
 import Main from "./components/Main";
 
-const config = {
-  initialColorMode: "dark",
-  useSystemColorMode: false,
-};
-
-const theme = extendTheme({ config });
+import customTheme from "./theme/theme";
 
 function App() {
   return (
-    <ChakraProvider theme={theme}>
+    <ChakraProvider theme={customTheme}>
       <Box p="4" w="lg">
         <Main />
       </Box>
@@ -24,7 +19,7 @@ function App() {
 
 ReactDOM.render(
   <>
-    <ColorModeScript initialColorMode={theme.config.initialColorMode} />
+    <ColorModeScript initialColorMode={'dark'} />
     <App />
   </>,
   document.getElementById("root")
