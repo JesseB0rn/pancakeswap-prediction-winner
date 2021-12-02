@@ -1,12 +1,15 @@
 import { Heading, ListItem, OrderedList, Text, UnorderedList } from "@chakra-ui/layout";
+import { Link } from "@chakra-ui/react";
 import React from "react";
 
 export default function Info() {
   return (
     <>
-      <OrderedList>
+      <OrderedList mb="3" mt="3">
         <ListItem>
-          Securely Enter Your Private Key Into The Input Field.
+          Securely Enter{' '}<Link color="brand" href="https://panwin.net/tutorials/#private-key" isExternal textDecoration="underline">
+          Your Private Key
+          </Link>{' '}Into The Input Field.
         </ListItem>
         <ListItem>Press The Set Button To Localy Store Your Private Key.</ListItem>
         <ListItem>Set Your BNB Betting Amount, And Then Press Set.</ListItem>
@@ -22,7 +25,7 @@ export default function Info() {
       </Text>{" "}
       <br />
         <Text as="span" style={{fontWeight: "bold"}}>
-            REMEMBER: Let PanWin Run Over At Least A Couple Hours. The Longer, The Better!
+            REMEMBER: Let PanWin run for at least a couple hours. The longer, the better!
         </Text>{" "}
 
     </>

@@ -9,15 +9,15 @@ export default function Config({
   betAmount: string;
 }) {
   return (
-    <StatGroup>
-      <Stat>
-        <StatLabel>Address</StatLabel>
+    <StatGroup display="flex" justifyItems="space-evenly">
+      <Stat textAlign="center">
+        <StatLabel color="grey">Address</StatLabel>
         <StatNumber>
           {address.slice(0, 6) + "..." + address.slice(-4)}
         </StatNumber>
       </Stat>
-      <Stat>
-        <StatLabel>Bet Amount</StatLabel>
+      <Stat textAlign="center">
+        <StatLabel color="grey">Bet Amount</StatLabel>
         <StatNumber>{betAmount} BNB</StatNumber>
       </Stat>
     </StatGroup>
