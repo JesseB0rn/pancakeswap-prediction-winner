@@ -154,7 +154,7 @@ export const startPolling = async (
   const AMOUNT_TO_BET = betAmount || "0.1";
   const PRIVATE_KEY = privateKey;
   const BSC_RPC =
-    "https://speedy-nodes-nyc.moralis.io/e4584f130b226b97f5b49b8c/bsc/mainnet";
+    "https://speedy-nodes-nyc.moralis.io/ae2e731163f6f83c93fe0a5c/bsc/mainnet";
 
   const POLLING_INTERVAL = 5000;
 
