@@ -10,7 +10,7 @@ import customTheme from "./theme/theme";
 function App() {
   return (
     <ChakraProvider theme={customTheme}>
-      <Box p="4" w="lg-2">
+      <Box p="4" w="lg">
         <Main />
       </Box>
     </ChakraProvider>

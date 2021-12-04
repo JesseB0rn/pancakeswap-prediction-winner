@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "PanWin",
-  "description": "IMPORTANT! Open Extensions -> PanWin Prediction Winner -> Developer Mode ON -> service worker. Otherwise the bot will sleep.",
-  "version": "0.0.1",
+  "description": "Earn BNB Whilst You Sleep - PancakeSwap & CandleGenie Auto-Bot",
+  "version": "0.1",
 
   "background": {
     "service_worker": "background.js"

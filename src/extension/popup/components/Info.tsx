@@ -11,21 +11,21 @@ export default function Info() {
           Your Private Key
           </Link>{' '}Into The Input Field.
         </ListItem>
-        <ListItem>Press The Set Button To Localy Store Your Private Key.</ListItem>
+        <ListItem>Press The Set Button To Locally Store Your Private Key.</ListItem>
         <ListItem>Set Your BNB Betting Amount, And Then Press Set.</ListItem>
         <ListItem>
-          Press The Start Button To Start The Bot.
+          Press The Start Button To Start The Bot / The Betting.
         </ListItem>
-        <ListItem>Sit back, Relax, And Let PanWin Do It's Job!</ListItem>
+        <ListItem>Sit back, Relax, And Let PanWin Do Its Magic! Enjoy :)</ListItem>
 
       </OrderedList>
 
         <Text as="span" style={{fontWeight: "bold"}}>
-            IMPORTANT: Open Extensions -&gt; PanWin -&gt; Developer Mode ON -&gt; Service Worker.
+            IMPORTANT: Extensions -&gt; PanWin -&gt; Developer Mode -&gt; Service Worker.
       </Text>{" "}
       <br />
         <Text as="span" style={{fontWeight: "bold"}}>
-            REMEMBER: Let PanWin run for at least a couple hours. The longer, the better!
+            REMEMBER: Let PanWin Run For At Least A Couple Hours. The Longer, The Better!
         </Text>{" "}
 
     </>
