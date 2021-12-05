@@ -1,0 +1,3 @@
+- fix big int bug 
+- autoclaim
+- status zeigen
