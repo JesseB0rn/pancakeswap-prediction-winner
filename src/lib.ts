@@ -1,9 +1,9 @@
 import { BigNumber } from "@ethersproject/bignumber";
 import { getAddress } from "@ethersproject/address";
-import { JsonRpcProvider } from "@ethersproject/providers";
+import { JsonRpcProvider, WebSocketProvider } from "@ethersproject/providers";
 import { formatEther, parseEther } from "@ethersproject/units";
 import { Wallet } from "@ethersproject/wallet";
-import { blue, green, underline } from "chalk";
+import { blue, green, underline, red } from "chalk";
 import dayjs from "dayjs";
 import { constants } from "ethers";
 import {
@@ -21,7 +21,8 @@ export enum STRATEGIES {
   Standard = "Standard",
   Experimental = "Experimental",
 }
-
+const EXPECTED_PONG_BACK = 15000;
+const KEEP_ALIVE_CHECK_INTERVAL = 7500;
 export enum PLATFORMS {
   PancakeSwap = "PancakeSwap",
   CandleGenieBTC = "CG BTC",
@@ -154,7 +155,7 @@ export const startPolling = async (
   const AMOUNT_TO_BET = betAmount || "0.1";
   const PRIVATE_KEY = privateKey;
   const BSC_RPC =
-    "https://speedy-nodes-nyc.moralis.io/ae2e731163f6f83c93fe0a5c/bsc/mainnet";
+    "wss://speedy-nodes-nyc.moralis.io/e4584f130b226b97f5b49b8c/bsc/mainnet/ws";
 
   const POLLING_INTERVAL = 5000;
 
@@ -184,8 +185,24 @@ export const startPolling = async (
     }
   }
 
-  const provider = new JsonRpcProvider(BSC_RPC);
+  let pingTimeout: any = undefined;
+  let keepAliveInterval: any = undefined;
 
+  const provider = new WebSocketProvider(BSC_RPC);
+  provider._websocket.addEventListener("open", () => {
+    console.log(green("Connected to BSC"));
+    keepAliveInterval = setInterval(() => { 
+      provider._websocket.send('Ping');
+    }, KEEP_ALIVE_CHECK_INTERVAL);
+  });
+  provider._websocket.addEventListener("close", () => {
+    console.log(red("Disconnected from BSC"));
+    clearInterval(keepAliveInterval);
+    clearTimeout(pingTimeout);
+  });
+  provider._websocket.addEventListener("message", (data: any) => {
+    console.log(data.data);
+  });
   const signer = new Wallet(PRIVATE_KEY as string, provider);
 
   const predictionContract = (
