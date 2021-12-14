@@ -61,6 +61,7 @@ chrome.runtime.onMessage.addListener(async (message: Message) => {
         true,
         PLATFORMS.CandleGenieETH
       ).catch();
+      console.log("Started polling");
     }
   }
 });

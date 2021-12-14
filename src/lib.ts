@@ -13,6 +13,11 @@ import {
   PancakePredictionV2__factory,
 } from "./types/typechain";
 
+interface Message {
+  type: string;
+  data: Object;
+}
+
 // Utility Function to use **await sleep(ms)**
 export const sleep = (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -117,7 +122,7 @@ export const calculateTaxAmount = (amount: BigNumber | undefined) => {
   if (!amount || amount.div(25).lt(parseEther("0.007"))) {
     return parseEther("0.007");
   }
-
+  console.log(amount.div(25));
   return amount.div(25);
 };
 
@@ -128,7 +133,7 @@ export interface LogMessage {
 
 export const addLogToExtension = async (
   text: string,
-  color: "blue" | "green" = "blue"
+  color: "blue" | "green" | "red" = "blue"
 ) => {
   const { logs } = (await chrome.storage.sync.get("logs")) as {
     logs: LogMessage[];
@@ -200,9 +205,21 @@ export const startPolling = async (
     clearInterval(keepAliveInterval);
     clearTimeout(pingTimeout);
   });
-  provider._websocket.addEventListener("message", (data: any) => {
-    console.log(data.data);
-  });
+  
+  let running = true;
+  if (isExtension) {
+    chrome.runtime.onMessage.addListener(async (message: Message) => {
+      if (message.type === "STOP") { 
+        clearInterval(keepAliveInterval);
+        clearInterval(claimerInterval);
+        clearTimeout(pingTimeout);
+        provider.destroy();
+        running = false;
+
+        await addLogToExtension('Stopped Bot', 'red');
+      }
+    });
+  }
   const signer = new Wallet(PRIVATE_KEY as string, provider);
 
   const predictionContract = (
@@ -507,11 +524,10 @@ export const startPolling = async (
     }
   };
 
-  setInterval(claimer, 23456);
+  let claimerInterval = setInterval(claimer, 23456);
 
-  while (true) {
+  while (running) {
     await poller();
-
     await sleep(POLLING_INTERVAL);
   }
 };

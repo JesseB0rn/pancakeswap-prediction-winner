@@ -237,6 +237,26 @@ export default function Main() {
             mb="5"
           >
             START BOT
+            </Button>
+            <Button
+            onClick={async () => {
+              chrome.runtime.sendMessage({
+                type: "STOP",
+                data: {
+                  
+                },
+              });
+
+              await sleep(100);
+              setFetchFlag.off();
+            }}
+            w="30"
+            size="lg"
+            colorScheme="red"
+            mt="3"
+            mb="5"
+          >
+            STOP BOT
           </Button>
         </HStack>
 
