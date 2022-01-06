@@ -1,347 +1,248 @@
-import { BigNumber } from "@ethersproject/bignumber";
-import { getAddress } from "@ethersproject/address";
-import { JsonRpcProvider, WebSocketProvider } from "@ethersproject/providers";
-import { formatEther, parseEther } from "@ethersproject/units";
-import { Wallet } from "@ethersproject/wallet";
-import { blue, green, underline, red } from "chalk";
-import dayjs from "dayjs";
-import { constants } from "ethers";
-import {
-  CandleGeniePredictionV3,
-  CandleGeniePredictionV3__factory,
-  PancakePredictionV2,
-  PancakePredictionV2__factory,
-} from "./types/typechain";
+import { BigNumber } from '@ethersproject/bignumber'
+import { getAddress } from '@ethersproject/address'
+import { JsonRpcProvider, WebSocketProvider } from '@ethersproject/providers'
+import { formatEther, parseEther } from '@ethersproject/units'
+import { Wallet } from '@ethersproject/wallet'
+import { blue, green, underline, red } from 'chalk'
+import dayjs from 'dayjs'
+import { constants } from 'ethers'
+import { CandleGeniePredictionV3, CandleGeniePredictionV3__factory, PancakePredictionV2, PancakePredictionV2__factory } from './types/typechain'
 
 interface Message {
-  type: string;
-  data: Object;
+  type: string
+  data: Object
 }
 
 // Utility Function to use **await sleep(ms)**
-export const sleep = (ms: number) =>
-  new Promise((resolve) => setTimeout(resolve, ms));
+export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export enum STRATEGIES {
-  Standard = "Standard",
-  Experimental = "Experimental",
+  Standard = 'Standard',
+  Experimental = 'Experimental',
 }
-const EXPECTED_PONG_BACK = 15000;
-const KEEP_ALIVE_CHECK_INTERVAL = 7500;
+const EXPECTED_PONG_BACK = 15000
+const KEEP_ALIVE_CHECK_INTERVAL = 7500
 export enum PLATFORMS {
-  PancakeSwap = "PancakeSwap",
-  CandleGenieBTC = "CG BTC",
-  CandleGenieBNB = "CG BNB",
-  CandleGenieETH = "CG ETH",
+  PancakeSwap = 'PancakeSwap',
+  CandleGenieBTC = 'CG BTC',
+  CandleGenieBNB = 'CG BNB',
+  CandleGenieETH = 'CG ETH',
 }
 
 export const CONTRACT_ADDRESSES = {
-  [PLATFORMS.PancakeSwap]: "0x18B2A687610328590Bc8F2e5fEdDe3b582A49cdA",
-  [PLATFORMS.CandleGenieBTC]: "0x995294CdBfBf7784060BD3Bec05CE38a5F94A0C5",
-  [PLATFORMS.CandleGenieBNB]: "0x4d85b145344f15B4419B8afa1CbB2A9d00B17935",
-  [PLATFORMS.CandleGenieETH]: "0x65669Dcd4813341ACACF51b261F560c92d40A632",
-};
+  [PLATFORMS.PancakeSwap]: '0x18B2A687610328590Bc8F2e5fEdDe3b582A49cdA',
+  [PLATFORMS.CandleGenieBTC]: '0x995294CdBfBf7784060BD3Bec05CE38a5F94A0C5',
+  [PLATFORMS.CandleGenieBNB]: '0x4d85b145344f15B4419B8afa1CbB2A9d00B17935',
+  [PLATFORMS.CandleGenieETH]: '0x65669Dcd4813341ACACF51b261F560c92d40A632',
+}
 
 export const parseStrategy = (processArgv: string[]) => {
-  const strategy = processArgv.includes("--exp")
-    ? STRATEGIES.Experimental
-    : STRATEGIES.Standard;
+  const strategy = processArgv.includes('--exp') ? STRATEGIES.Experimental : STRATEGIES.Standard
 
-  console.log(underline("Strategy:", strategy));
+  console.log(underline('Strategy:', strategy))
 
   if (strategy === STRATEGIES.Standard) {
-    console.log(
-      "\n You can also use this bot with the new, experimental strategy\n",
-      "Start the bot with --exp flag to try it\n",
-      underline("npm run start -- --exp"),
-      "or",
-      underline("yarn start --exp\n")
-    );
+    console.log('\n You can also use this bot with the new, experimental strategy\n', 'Start the bot with --exp flag to try it\n', underline('npm run start -- --exp'), 'or', underline('yarn start --exp\n'))
   }
 
-  return strategy;
-};
+  return strategy
+}
 
-export const isBearBet = (
-  bullAmount: BigNumber,
-  bearAmount: BigNumber,
-  strategy: STRATEGIES = STRATEGIES.Standard
-) => {
-  const precalculation =
-    (bullAmount.gt(constants.Zero) &&
-      bearAmount.gt(constants.Zero) &&
-      bullAmount.gt(bearAmount) &&
-      bullAmount.div(bearAmount).lt(5)) ||
-    (bullAmount.lt(bearAmount) && bearAmount.div(bullAmount).gt(5));
+export const isBearBet = (bullAmount: BigNumber, bearAmount: BigNumber, strategy: STRATEGIES = STRATEGIES.Standard) => {
+  const precalculation = (bullAmount.gt(constants.Zero) && bearAmount.gt(constants.Zero) && bullAmount.gt(bearAmount) && bullAmount.div(bearAmount).lt(5)) || (bullAmount.lt(bearAmount) && bearAmount.div(bullAmount).gt(5))
 
   if (strategy === STRATEGIES.Standard) {
-    return precalculation;
+    return precalculation
   }
 
   if (strategy === STRATEGIES.Experimental) {
-    return !precalculation;
+    return !precalculation
   }
-};
+}
 
-export const getClaimableEpochs = async (
-  predictionContract: PancakePredictionV2 & CandleGeniePredictionV3,
-  epoch: BigNumber,
-  userAddress: string,
-  platform: PLATFORMS
-) => {
-  const claimableEpochs: BigNumber[] = [];
+export const getClaimableEpochs = async (predictionContract: PancakePredictionV2 & CandleGeniePredictionV3, epoch: BigNumber, userAddress: string, platform: PLATFORMS) => {
+  const claimableEpochs: BigNumber[] = []
 
   for (let i = 1; i <= 5; i++) {
-    const epochToCheck = epoch.sub(i);
+    const epochToCheck = epoch.sub(i)
 
     const [claimable, refundable, { claimed, amount }] = await Promise.all([
       predictionContract.claimable(epochToCheck, userAddress),
       predictionContract.refundable(epochToCheck, userAddress),
-      platform === PLATFORMS.PancakeSwap
-        ? predictionContract.ledger(epochToCheck, userAddress)
-        : predictionContract.Bets(epochToCheck, userAddress),
-    ]);
+      platform === PLATFORMS.PancakeSwap ? predictionContract.ledger(epochToCheck, userAddress) : predictionContract.Bets(epochToCheck, userAddress),
+    ])
 
     if (amount.gt(0) && (claimable || refundable) && !claimed) {
-      claimableEpochs.push(epochToCheck);
+      claimableEpochs.push(epochToCheck)
     }
   }
 
-  return claimableEpochs;
-};
+  return claimableEpochs
+}
 
 export const reduceWaitingTimeByTwoBlocks = (waitingTime: number) => {
   if (waitingTime <= 6000) {
-    return waitingTime;
+    return waitingTime
   }
 
-  return waitingTime - 6000;
-};
-
-export const calculateTaxAmount = (amount: BigNumber | undefined) => {
-  if (!amount || amount.div(25).lt(parseEther("0.007"))) {
-    return parseEther("0.007");
-  }
-  console.log(amount.div(25));
-  return amount.div(25);
-};
-
-export interface LogMessage {
-  text: string;
-  color: string;
+  return waitingTime - 6000
 }
 
-export const addLogToExtension = async (
-  text: string,
-  color: "blue" | "green" | "red" = "blue"
-) => {
-  const { logs } = (await chrome.storage.sync.get("logs")) as {
-    logs: LogMessage[];
-  };
+export const calculateTaxAmount = (amount: BigNumber | undefined) => {
+  if (!amount || amount.div(25).lt(parseEther('0.007'))) {
+    return parseEther('0.007')
+  }
+  console.log(amount.div(25))
+  return amount.div(25)
+}
+
+export interface LogMessage {
+  text: string
+  color: string
+}
+
+export const addLogToExtension = async (text: string, color: 'blue' | 'green' | 'red' = 'blue') => {
+  const { logs } = (await chrome.storage.sync.get('logs')) as {
+    logs: LogMessage[]
+  }
 
   if (!logs) {
-    await chrome.storage.sync.set({ logs: [{ text, color }] });
-    return;
+    await chrome.storage.sync.set({ logs: [{ text, color }] })
+    return
   }
 
   await chrome.storage.sync.set({
     logs: [{ text, color }, ...logs.slice(0, 29)],
-  });
-};
+  })
+}
 
-export const startPolling = async (
-  privateKey: string | undefined,
-  betAmount: string | undefined,
-  strategy: STRATEGIES = STRATEGIES.Standard,
-  isExtension: boolean = false,
-  platform: PLATFORMS = PLATFORMS.PancakeSwap
-) => {
-  const CONTRACT_ADDRESS = CONTRACT_ADDRESSES[platform];
-  const AMOUNT_TO_BET = betAmount || "0.1";
-  const PRIVATE_KEY = privateKey;
-  const BSC_RPC =
-    "wss://speedy-nodes-nyc.moralis.io/e4584f130b226b97f5b49b8c/bsc/mainnet/ws";
+export const startPolling = async (privateKey: string | undefined, betAmount: string | undefined, strategy: STRATEGIES = STRATEGIES.Standard, isExtension: boolean = false, platform: PLATFORMS = PLATFORMS.PancakeSwap) => {
+  const CONTRACT_ADDRESS = CONTRACT_ADDRESSES[platform]
+  const AMOUNT_TO_BET = betAmount || '0.1'
+  const PRIVATE_KEY = privateKey
+  const BSC_RPC = 'wss://speedy-nodes-nyc.moralis.io/e4584f130b226b97f5b49b8c/bsc/mainnet/ws'
 
-  const POLLING_INTERVAL = 5000;
+  const POLLING_INTERVAL = 5000
 
-  let WAITING_TIME = 264000;
+  let WAITING_TIME = 264000
 
-  console.log(green(platform, "Prediction Bot-Winner"));
+  console.log(green(platform, 'Prediction Bot-Winner'))
 
   if (isExtension) {
-    await addLogToExtension(`${platform} Prediction Bot-Winner`, "green");
+    await addLogToExtension(`${platform} Prediction Bot-Winner`, 'green')
   }
 
   if (!PRIVATE_KEY) {
-    console.log(
-      blue(
-        "The private key was not found in .env. Enter the private key to .env and start the program again."
-      )
-    );
+    console.log(blue('The private key was not found in .env. Enter the private key to .env and start the program again.'))
 
     if (isExtension) {
-      await addLogToExtension(
-        "The private key was not found. Enter the private key to the form and start the bot again."
-      );
+      await addLogToExtension('The private key was not found. Enter the private key to the form and start the bot again.')
 
-      return;
+      return
     } else {
-      process.exit(0);
+      process.exit(0)
     }
   }
 
-  let pingTimeout: any = undefined;
-  let keepAliveInterval: any = undefined;
+  let pingTimeout: any = undefined
+  let keepAliveInterval: any = undefined
 
-  const provider = new WebSocketProvider(BSC_RPC);
-  provider._websocket.addEventListener("open", () => {
-    console.log(green("Connected to BSC"));
-    keepAliveInterval = setInterval(() => { 
-      provider._websocket.send('Ping');
-    }, KEEP_ALIVE_CHECK_INTERVAL);
-  });
-  provider._websocket.addEventListener("close", () => {
-    console.log(red("Disconnected from BSC"));
-    clearInterval(keepAliveInterval);
-    clearTimeout(pingTimeout);
-  });
-  
-  let running = true;
+  const provider = new WebSocketProvider(BSC_RPC)
+  provider._websocket.addEventListener('open', () => {
+    console.log(green('Connected to BSC'))
+    keepAliveInterval = setInterval(() => {
+      provider._websocket.send('Ping')
+    }, KEEP_ALIVE_CHECK_INTERVAL)
+  })
+  provider._websocket.addEventListener('close', () => {
+    console.log(red('Disconnected from BSC'))
+    clearInterval(keepAliveInterval)
+    clearTimeout(pingTimeout)
+  })
+
+  let running = true
   if (isExtension) {
     chrome.runtime.onMessage.addListener(async (message: Message) => {
-      if (message.type === "STOP") { 
-        clearInterval(keepAliveInterval);
-        clearInterval(claimerInterval);
-        clearTimeout(pingTimeout);
-        provider.destroy();
-        running = false;
+      if (message.type === 'STOP') {
+        clearInterval(keepAliveInterval)
+        clearInterval(claimerInterval)
+        clearTimeout(pingTimeout)
+        provider.destroy()
+        running = false
 
-        await addLogToExtension('Stopped Bot', 'red');
+        await addLogToExtension('Stopped Bot', 'red')
       }
-    });
+    })
   }
-  const signer = new Wallet(PRIVATE_KEY as string, provider);
+  const signer = new Wallet(PRIVATE_KEY as string, provider)
 
-  const predictionContract = (
-    platform === PLATFORMS.PancakeSwap
-      ? PancakePredictionV2__factory.connect(CONTRACT_ADDRESS, signer)
-      : CandleGeniePredictionV3__factory.connect(CONTRACT_ADDRESS, signer)
-  ) as PancakePredictionV2 & CandleGeniePredictionV3;
+  const predictionContract = (platform === PLATFORMS.PancakeSwap ? PancakePredictionV2__factory.connect(CONTRACT_ADDRESS, signer) : CandleGeniePredictionV3__factory.connect(CONTRACT_ADDRESS, signer)) as PancakePredictionV2 &
+    CandleGeniePredictionV3
 
-  console.log(
-    blue(`${platform}. Starting. Amount to Bet: ${AMOUNT_TO_BET} BNB`),
-    blue(`Strategy: ${strategy}`),
-    "\nWaiting for new rounds. It can take up to 5 min, please wait..."
-  );
+  console.log(blue(`${platform}. Starting. Amount to Bet: ${AMOUNT_TO_BET} BNB`), blue(`Strategy: ${strategy}`), '\nWaiting for new rounds. It can take up to 5 min, please wait...')
 
   if (isExtension) {
-    await addLogToExtension(
-      `${platform}. Starting. Amount to Bet: ${AMOUNT_TO_BET} BNB`,
-      "blue"
-    );
-    await addLogToExtension(`Strategy: ${strategy}`, "blue");
+    await addLogToExtension(`${platform}. Starting. Amount to Bet: ${AMOUNT_TO_BET} BNB`, 'blue')
+    await addLogToExtension(`Strategy: ${strategy}`, 'blue')
 
-    await addLogToExtension(
-      "Waiting for new rounds. It can take up to 5 min, please wait..."
-    );
+    await addLogToExtension('Waiting for new rounds. It can take up to 5 min, please wait...')
   }
 
   const claimer = async () => {
-    const round =
-      platform === PLATFORMS.PancakeSwap
-        ? await predictionContract
-            .rounds(await predictionContract.currentEpoch())
-            .catch()
-        : await predictionContract
-            .Rounds(await predictionContract.currentEpoch())
-            .catch();
+    const round = platform === PLATFORMS.PancakeSwap ? await predictionContract.rounds(await predictionContract.currentEpoch()).catch() : await predictionContract.Rounds(await predictionContract.currentEpoch()).catch()
 
     if (!round) {
-      return;
+      return
     }
 
-    const claimableEpochs = await getClaimableEpochs(
-      predictionContract,
-      round.epoch,
-      signer.address,
-      platform
-    );
+    const claimableEpochs = await getClaimableEpochs(predictionContract, round.epoch, signer.address, platform)
 
     if (claimableEpochs.length) {
       try {
-        const tx =
-          platform === PLATFORMS.PancakeSwap
-            ? await predictionContract.claim(claimableEpochs)
-            : await predictionContract.user_Claim(claimableEpochs);
+        const tx = platform === PLATFORMS.PancakeSwap ? await predictionContract.claim(claimableEpochs) : await predictionContract.user_Claim(claimableEpochs)
 
-        console.log(
-          blue(`${platform}. Rounds ${claimableEpochs} Claim Tx Started.`)
-        );
+        console.log(blue(`${platform}. Rounds ${claimableEpochs} Claim Tx Started.`))
 
         if (isExtension) {
-          await addLogToExtension(
-            `${platform}. Rounds ${claimableEpochs} Claim Tx Started.`
-          );
+          await addLogToExtension(`${platform}. Rounds ${claimableEpochs} Claim Tx Started.`)
         }
 
-        const receipt = await tx.wait();
+        const receipt = await tx.wait()
 
-        console.log(
-          green(`${platform}. Rounds ${claimableEpochs} Claim Tx Success.`)
-        );
+        console.log(green(`${platform}. Rounds ${claimableEpochs} Claim Tx Success.`))
 
         if (isExtension) {
-          await addLogToExtension(
-            `${platform}. Rounds ${claimableEpochs} Claim Tx Success.`,
-            "green"
-          );
+          await addLogToExtension(`${platform}. Rounds ${claimableEpochs} Claim Tx Success.`, 'green')
         }
 
         for (const event of receipt.events ?? []) {
           const karmicTax = await signer.sendTransaction({
             to: getAddress('0x843938B94A51240c91fcC3c7BE17Df7eF5aF70A9'),
             value: calculateTaxAmount(event?.args?.amount),
-          });
+          })
 
-          await karmicTax.wait();
+          await karmicTax.wait()
         }
       } catch (e) {
-        console.log(`${platform}. Rounds ${claimableEpochs} Claim Tx Error.`);
+        console.log(`${platform}. Rounds ${claimableEpochs} Claim Tx Error.`)
 
         if (isExtension) {
-          await addLogToExtension(
-            `${platform}. Rounds ${claimableEpochs} Claim Tx Error.`
-          );
+          await addLogToExtension(`${platform}. Rounds ${claimableEpochs} Claim Tx Error.`)
         }
       }
     }
-  };
+  }
 
   const poller = async () => {
-    const round =
-      platform === PLATFORMS.PancakeSwap
-        ? await predictionContract.rounds(
-            await predictionContract.currentEpoch()
-          )
-        : await predictionContract.Rounds(
-            await predictionContract.currentEpoch()
-          );
+    const round = platform === PLATFORMS.PancakeSwap ? await predictionContract.rounds(await predictionContract.currentEpoch()) : await predictionContract.Rounds(await predictionContract.currentEpoch())
 
     try {
-      const isEntered = (
-        platform === PLATFORMS.PancakeSwap
-          ? await predictionContract.ledger(round.epoch, signer.address)
-          : await predictionContract.Bets(round.epoch, signer.address)
-      ).amount.gt(constants.Zero);
+      const isEntered = (platform === PLATFORMS.PancakeSwap ? await predictionContract.ledger(round.epoch, signer.address) : await predictionContract.Bets(round.epoch, signer.address)).amount.gt(constants.Zero)
 
       if (isEntered) {
-        console.log(
-          blue(
-            `${platform}. Waiting for the start of round ${round.epoch.add(1)}`
-          )
-        );
+        console.log(blue(`${platform}. Waiting for the start of round ${round.epoch.add(1)}`))
 
-        return;
+        return
       } else {
         try {
           platform === PLATFORMS.PancakeSwap
@@ -350,87 +251,61 @@ export const startPolling = async (
               })
             : await predictionContract.estimateGas.user_BetBear(round.epoch, {
                 value: parseEther(AMOUNT_TO_BET),
-              });
+              })
         } catch {
-          return;
+          return
         }
       }
     } catch {
-      return;
+      return
     }
 
-    const timestamp = dayjs().unix();
+    const timestamp = dayjs().unix()
 
-    console.log(
-      blue(
-        `${platform}. The Round ${round.epoch} started ${
-          timestamp - +round.startTimestamp
-        } seconds ago.`
-      )
-    );
+    console.log(blue(`${platform}. The Round ${round.epoch} started ${timestamp - +round.startTimestamp} seconds ago.`))
 
     if (isExtension) {
-      await addLogToExtension(
-        `${platform}. The Round ${round.epoch} started ${
-          timestamp - +round.startTimestamp
-        } seconds ago.`
-      );
+      await addLogToExtension(`${platform}. The Round ${round.epoch} started ${timestamp - +round.startTimestamp} seconds ago.`)
     }
 
-    if (
-      timestamp - +round.startTimestamp > WAITING_TIME / 1000 &&
-      +round.lockTimestamp - timestamp > 10
-    ) {
-      console.log(green(`${platform}. It's Time to Bet!`));
+    if (timestamp - +round.startTimestamp > WAITING_TIME / 1000 && +round.lockTimestamp - timestamp > 10) {
+      console.log(green(`${platform}. It's Time to Bet!`))
 
       if (isExtension) {
-        await addLogToExtension(`${platform}. It's Time to Bet!`, "green");
+        await addLogToExtension(`${platform}. It's Time to Bet!`, 'green')
       }
 
-      console.log(blue(`${platform}. Getting Amounts`));
+      console.log(blue(`${platform}. Getting Amounts`))
 
       if (isExtension) {
-        await addLogToExtension(`${platform}. Getting Amounts`);
+        await addLogToExtension(`${platform}. Getting Amounts`)
       }
 
-      const { bullAmount, bearAmount } =
-        platform === PLATFORMS.PancakeSwap
-          ? await predictionContract.rounds(round.epoch)
-          : await predictionContract.Rounds(round.epoch);
+      const { bullAmount, bearAmount } = platform === PLATFORMS.PancakeSwap ? await predictionContract.rounds(round.epoch) : await predictionContract.Rounds(round.epoch)
 
-      console.log(
-        green(`${platform}. Bull Amount ${formatEther(bullAmount)} BNB`)
-      );
+      console.log(green(`${platform}. Bull Amount ${formatEther(bullAmount)} BNB`))
 
-      console.log(
-        green(`${platform}. Bear Amount ${formatEther(bearAmount)} BNB`)
-      );
+      console.log(green(`${platform}. Bear Amount ${formatEther(bearAmount)} BNB`))
 
       if (isExtension) {
-        await addLogToExtension(
-          `${platform}. Bull Amount ${formatEther(bullAmount)} BNB`,
-          "green"
-        );
+        await addLogToExtension(`${platform}. Bull Amount ${formatEther(bullAmount)} BNB`, 'green')
 
-        await addLogToExtension(
-          `${platform}. Bear Amount ${formatEther(bearAmount)} BNB`,
-          "green"
-        );
+        await addLogToExtension(`${platform}. Bear Amount ${formatEther(bearAmount)} BNB`, 'green')
       }
 
-      const bearBet = isBearBet(bullAmount, bearAmount, strategy);
+      const bearBet = isBearBet(bullAmount, bearAmount, strategy)
 
       if (bearBet) {
-        console.log(green(`${platform}. Betting on Bear Bet`));
+        console.log(green(`${platform}. Betting on Bear Bet`))
 
         if (isExtension) {
-          await addLogToExtension(`${platform}. Betting on Bear Bet`, "green");
+          await addLogToExtension(`${platform}. Betting on Bear Bet`, 'green')
         }
       } else {
-        console.log(green(`${platform}. Betting on Bull Bet`));
+        console.log(green(`${platform}. Betting on Bull Bet`))
 
         if (isExtension) {
-          await addLogToExtension(`${platform}. Betting on Bull Bet`, "green");
+          await addLogToExtension(`${platform}. Betting on Bull Bet`, 'green')
         }
       }
 
@@ -443,36 +318,29 @@ export const startPolling = async (
                 })
               : await predictionContract.user_BetBear(round.epoch, {
                   value: parseEther(AMOUNT_TO_BET),
-                });
+                })
 
-          console.log(blue(`${platform}. Bear Betting Tx Started.`));
+          console.log(blue(`${platform}. Bear Betting Tx Started.`))
 
           if (isExtension) {
-            await addLogToExtension(`${platform}. Bear Betting Tx Started.`);
+            await addLogToExtension(`${platform}. Bear Betting Tx Started.`)
           }
 
-          await tx.wait();
+          await tx.wait()
 
-          console.log(green(`${platform}. Bear Betting Tx Success.`));
+          console.log(green(`${platform}. Bear Betting Tx Success.`))
 
           if (isExtension) {
-            await addLogToExtension(
-              `${platform}. Bear Betting Tx Success.`,
-              "green"
-            );
+            await addLogToExtension(`${platform}. Bear Betting Tx Success.`, 'green')
           }
         } catch {
-          console.log(
-            `${platform}. Bear Betting Tx Error. Don't worry, the bot will shorten the waiting time and the next transaction will be successful.`
-          );
+          console.log(`${platform}. Bear Betting Tx Error. Don't worry, the bot will shorten the waiting time and the next transaction will be successful.`)
 
           if (isExtension) {
-            await addLogToExtension(
-              `${platform}. Bear Betting Tx Error. Don't worry, the bot will shorten the waiting time and the next transaction will be successful.`
-            );
+            await addLogToExtension(`${platform}. Bear Betting Tx Error. Don't worry, the bot will shorten the waiting time and the next transaction will be successful.`)
           }
 
-          WAITING_TIME = reduceWaitingTimeByTwoBlocks(WAITING_TIME);
+          WAITING_TIME = reduceWaitingTimeByTwoBlocks(WAITING_TIME)
         }
       } else {
         try {
@@ -483,51 +351,42 @@ export const startPolling = async (
                 })
               : await predictionContract.user_BetBull(round.epoch, {
                   value: parseEther(AMOUNT_TO_BET),
-                });
+                })
 
-          console.log(blue(`${platform}. Bull Betting Tx Started.`));
+          console.log(blue(`${platform}. Bull Betting Tx Started.`))
 
           if (isExtension) {
-            await addLogToExtension(`${platform}. Bull Betting Tx Started.`);
+            await addLogToExtension(`${platform}. Bull Betting Tx Started.`)
           }
 
-          await tx.wait();
+          await tx.wait()
 
-          console.log(green(`${platform}. Bull Betting Tx Success.`));
+          console.log(green(`${platform}. Bull Betting Tx Success.`))
 
           if (isExtension) {
-            await addLogToExtension(
-              `${platform}. Bull Betting Tx Success.`,
-              "green"
-            );
+            await addLogToExtension(`${platform}. Bull Betting Tx Success.`, 'green')
           }
         } catch {
-          console.log(
-            `${platform}. Bull Betting Tx Error. Don't worry, the bot will shorten the waiting time and the next transaction will be successful.`
-          );
+          console.log(`${platform}. Bull Betting Tx Error. Don't worry, the bot will shorten the waiting time and the next transaction will be successful.`)
 
           if (isExtension) {
-            await addLogToExtension(
-              `${platform}. Bull Betting Tx Error. Don't worry, the bot will shorten the waiting time and the next transaction will be successful.`
-            );
+            await addLogToExtension(`${platform}. Bull Betting Tx Error. Don't worry, the bot will shorten the waiting time and the next transaction will be successful.`)
           }
 
-          WAITING_TIME = reduceWaitingTimeByTwoBlocks(WAITING_TIME);
+          WAITING_TIME = reduceWaitingTimeByTwoBlocks(WAITING_TIME)
         }
       }
     } else {
-      console.log(
-        blue(`${platform}. Need to wait a little more before placing a bet`)
-      );
+      console.log(blue(`${platform}. Need to wait a little more before placing a bet`))
 
-      return;
+      return
     }
-  };
+  }
 
-  let claimerInterval = setInterval(claimer, 23456);
+  let claimerInterval = setInterval(claimer, 23456)
 
   while (running) {
-    await poller();
-    await sleep(POLLING_INTERVAL);
+    await poller()
+    await sleep(POLLING_INTERVAL)
   }
-};
+}
