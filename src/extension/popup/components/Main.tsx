@@ -2,7 +2,7 @@ import { Button } from '@chakra-ui/button'
 
 import { FormControl, FormLabel } from '@chakra-ui/form-control'
 import { useBoolean } from '@chakra-ui/hooks'
-import { FaTwitter } from 'react-icons/fa'
+import { FaDiscord } from 'react-icons/fa'
 import { IoSquareOutline } from 'react-icons/io5'
 import { CheckIcon, CloseIcon, LockIcon, NotAllowedIcon, PlusSquareIcon, QuestionIcon, QuestionOutlineIcon, StarIcon } from '@chakra-ui/icons'
 import { Input, InputGroup, InputLeftAddon } from '@chakra-ui/input'
@@ -64,7 +64,7 @@ export default function Main() {
     <>
       <HStack justify="space-between" mb="0">
         <IconButton href="https://panwin.net/tutorials/" variant="outline" isRound={true} aria-label="Help" icon={<QuestionIcon />} size="md" />
-        <IconButton href="https://twitter.com/PanWinBot" variant="outline" isRound={true} aria-label="Help" icon={<FaTwitter />} size="md" />
+        <IconButton href="https://discord.gg/panwin" variant="outline" isRound={true} aria-label="Help" icon={<FaDiscord />} size="md" />
       </HStack>
 
       <Box p="6" pt="0" mt="-30px" mb="12" w="lg-8">
